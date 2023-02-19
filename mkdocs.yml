@@ -1,0 +1,32 @@
+site_name: Wearable & Ubiquitous Computing 
+repo_url: https://github.com/hulohot/dev-scoreboard
+repo_name: hulohot/dev-scoreboard
+
+nav:
+  - Home: index.md
+  - Project 1: project-1.md
+
+theme:
+    name: material
+    locale: en
+
+    palette:
+      # Palette toggle for light mode
+      - media: "(prefers-color-scheme: light)"
+        scheme: default
+        toggle:
+          icon: material/brightness-7
+          name: Switch to dark mode
+
+      # Palette toggle for dark mode
+      - media: "(prefers-color-scheme: dark)"
+        scheme: slate
+        toggle:
+          icon: material/brightness-4
+          name: Switch to light mode
+
+markdown_extensions:
+  - attr_list
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
