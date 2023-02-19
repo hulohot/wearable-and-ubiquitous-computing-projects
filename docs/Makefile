@@ -26,5 +26,5 @@ b build:
 	mkdocs build --strict
 
 d deploy:
-	mkdocs gh-deploy --strict --force
+	mkdocs ../gh-deploy --strict --force
 
