@@ -9,7 +9,9 @@ const int redLedPin = 3;         // Red LED pin
 const int greenLedPin = 2;       // Green LED pin
 
 int mode = 1;             // 1 for light meter mode, 2 for timer mode
-int lightThreshold = 100; // Light threshold for timer mode
+int lightThreshold = 155; // Light threshold for timer mode
+int lightMinium = 10;     // Minimum light value for light meter mode
+int lightMaximum = 300;   // Maximum light value for light meter mode
 int count = 0;            // Counter for timer mode
 
 using Button = AblePulldownClickerButton;
@@ -21,6 +23,9 @@ Button button(buttonPin);
 // Define button state variables
 unsigned long lastDebounceTime = 0;
 
+/**
+ * @brief Function to blink both LEDs.
+ */
 void blink_leds()
 {
   delay(200);
@@ -29,40 +34,60 @@ void blink_leds()
   leds_off();
 }
 
+/**
+ * @brief Function to turn off both LEDs.
+ */
 void leds_off()
 {
   digitalWrite(redLedPin, LOW);
   digitalWrite(greenLedPin, LOW);
 }
 
+/**
+ * @brief Function to turn on both LEDs.
+ */
 void leds_on()
 {
   digitalWrite(redLedPin, HIGH);
   digitalWrite(greenLedPin, HIGH);
 }
 
+/**
+ * @brief Function to turn on the green LED and turn off the red LED.
+ */
 void green_led_on()
 {
   digitalWrite(greenLedPin, HIGH);
   digitalWrite(redLedPin, LOW);
 }
 
+/**
+ * @brief Function to turn on the red LED and turn off the green LED.
+ */
 void red_led_on()
 {
   digitalWrite(redLedPin, HIGH);
   digitalWrite(greenLedPin, LOW);
 }
 
+/**
+ * @brief Function to handle the behavior of the system in light meter mode.
+ * @param lightValue The value read from the photoresistor.
+ */
 void handle_mode_1(int lightValue)
 {
   // Map photoresistor value to servo angle
   lightValue = min(lightValue, 300);
-  int servoAngle = map(lightValue, 10, 300, 0, 180);
+  int servoAngle = map(lightValue, lightMinium, lightMaximum, 0, 180);
 
   // Move servo to corresponding angle
   servoMotor.write(servoAngle);
 }
 
+/**
+ * @brief Function to handle the behavior of the system in timer mode.
+ * @param lightValue The value read from the photoresistor.
+ */
 void handle_mode_2(int lightValue)
 {
   // Check if we should decrement count
@@ -90,6 +115,9 @@ void handle_mode_2(int lightValue)
   servoMotor.write(servoAngle);
 }
 
+/**
+ * @brief Function to handle the behavior of the system when the button is pressed.
+ */
 void handle_button_pressed()
 {
   if (mode == 1)
@@ -109,6 +137,9 @@ void handle_button_pressed()
   }
 }
 
+/**
+ * @brief Function to set up the system.
+ */
 void setup()
 {
   // Initialize serial monitor
@@ -133,6 +164,9 @@ void setup()
   Serial.println("Setup complete");
 }
 
+/**
+ * @brief Function to run the main loop of the system.
+ */
 void loop()
 {
   // Read button state
