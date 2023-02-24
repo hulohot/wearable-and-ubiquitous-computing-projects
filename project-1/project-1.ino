@@ -8,7 +8,7 @@ const int buttonPin = 4;         // Pushbutton pin
 const int redLedPin = 3;         // Red LED pin
 const int greenLedPin = 2;       // Green LED pin
 
-int mode = 0;             // 0 for light meter mode, 1 for timer mode
+int mode = 1;             // 1 for light meter mode, 2 for timer mode
 int lightThreshold = 100; // Light threshold for timer mode
 int count = 0;            // Counter for timer mode
 
@@ -20,6 +20,94 @@ Button button(buttonPin);
 
 // Define button state variables
 unsigned long lastDebounceTime = 0;
+
+void blink_leds()
+{
+  delay(200);
+  leds_on();
+  delay(200);
+  leds_off();
+}
+
+void leds_off()
+{
+  digitalWrite(redLedPin, LOW);
+  digitalWrite(greenLedPin, LOW);
+}
+
+void leds_on()
+{
+  digitalWrite(redLedPin, HIGH);
+  digitalWrite(greenLedPin, HIGH);
+}
+
+void green_led_on()
+{
+  digitalWrite(greenLedPin, HIGH);
+  digitalWrite(redLedPin, LOW);
+}
+
+void red_led_on()
+{
+  digitalWrite(redLedPin, HIGH);
+  digitalWrite(greenLedPin, LOW);
+}
+
+void handle_mode_1(int lightValue)
+{
+  // Map photoresistor value to servo angle
+  lightValue = min(lightValue, 300);
+  int servoAngle = map(lightValue, 10, 300, 0, 180);
+
+  // Move servo to corresponding angle
+  servoMotor.write(servoAngle);
+}
+
+void handle_mode_2(int lightValue)
+{
+  // Check if we should decrement count
+  // If the count is above 0, the last debounce time is more than 1 second ago, and the light value is above the threshold
+  if (count > 0 && millis() - lastDebounceTime >= 1000 && lightValue > lightThreshold)
+  {
+    // Decrement count
+    count--;
+    // Reset lastDebounceTime
+    lastDebounceTime = millis();
+  }
+
+  // Handle LED state
+  if (count > 0)
+  {
+    green_led_on();
+  }
+  else
+  {
+    red_led_on();
+  }
+
+  // Move servo to corresponding angle
+  int servoAngle = map(count, 30, 0, 0, 180);
+  servoMotor.write(servoAngle);
+}
+
+void handle_button_pressed()
+{
+  if (mode == 1)
+  {
+    mode = 2;
+    // Set the counter to 30
+    count = 30;
+  }
+  else
+  {
+    mode = 1;
+    // Reset counter
+    count = 0;
+
+    // Reset LEDs
+    leds_off();
+  }
+}
 
 void setup()
 {
@@ -33,22 +121,14 @@ void setup()
 
   // Attach servomotor to pin
   servoMotor.attach(servoPin);
-  servoMotor.write(180);
-  delay(500);
   servoMotor.write(0);
 
   // Initialize button state
   button.begin();
 
   // Initialize LED states
-  digitalWrite(redLedPin, LOW);
-  digitalWrite(greenLedPin, LOW);
-  delay(200);
-  digitalWrite(redLedPin, HIGH);
-  digitalWrite(greenLedPin, HIGH);
-  delay(200);
-  digitalWrite(redLedPin, LOW);
-  digitalWrite(greenLedPin, LOW);
+  leds_off();
+  blink_leds();
 
   Serial.println("Setup complete");
 }
@@ -62,67 +142,19 @@ void loop()
   int lightValue = analogRead(photoresistorPin);
 
   // Light meter mode
-  if (mode == 0)
+  if (mode == 1)
   {
-    // Map photoresistor value to servo angle
-    lightValue = min(lightValue, 300);
-    int servoAngle = map(lightValue, 10, 300, 0, 180);
-
-    // Move servo to corresponding angle
-    servoMotor.write(servoAngle);
+    handle_mode_1(lightValue);
   }
   // Timer mode
   else
   {
-    // Check if count is greater than 0
-    // If so, check if a 1 second interval has passed
-    if (count > 0 && millis() - lastDebounceTime >= 1000 && lightValue > lightThreshold)
-    {
-      // Decrement count
-      count--;
-      // Reset lastDebounceTime
-      lastDebounceTime = millis();
-
-      Serial.print("Count ");
-      Serial.println(count);
-    }
-
-    // Handle LED state
-    if (count > 0)
-    {
-      digitalWrite(redLedPin, LOW);
-      digitalWrite(greenLedPin, HIGH);
-    }
-    else
-    {
-      digitalWrite(redLedPin, HIGH);
-      digitalWrite(greenLedPin, LOW);
-    }
-
-    // Move servo to corresponding angle
-    int servoAngle = map(count, 30, 0, 0, 180);
-    servoMotor.write(servoAngle);
+    handle_mode_2(lightValue);
   }
 
   // Check if button has been pressed
   if (button.resetClicked())
   {
-    Serial.println("Button pressed");
-    if (mode == 0)
-    {
-      mode = 1;
-      // Set the counter to 30
-      count = 30;
-    }
-    else
-    {
-      mode = 0;
-      // Reset counter
-      count = 0;
-
-      // Reset LEDs   
-      digitalWrite(redLedPin, LOW);
-      digitalWrite(greenLedPin, LOW);   
-    }
+    handle_button_pressed();
   }
 }
